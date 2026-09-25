@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1E1228">
+<meta name="robots" content="noindex, nofollow">
+<title>Sala dos anfitriões</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=IM+Fell+English:ital@0;1&family=Spectral:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#140B1B;--plum:#1E1228;--plum2:#2A1838;--teal:#0F3A3E;--gold:#D4AF6A;--gold2:#F0D79A;--golddim:#7E6638;--ember:#E8602C;--bone:#F1E6CF;--sage:#8FB39A;
+  --display:'IM Fell English SC',Georgia,serif;--fell:'IM Fell English',Georgia,serif;--body:'Spectral',Georgia,serif}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+body{min-height:100vh;color:var(--bone);font-family:var(--body);line-height:1.45;
+  background:radial-gradient(120% 50% at 50% -10%,#3D2150,transparent 70%),var(--plum)}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0}
+:focus-visible{outline:2px solid var(--gold2);outline-offset:3px}
+.wrap{max-width:720px;margin:0 auto;padding:calc(env(safe-area-inset-top,0px) + 22px) 16px calc(env(safe-area-inset-bottom,0px) + 40px)}
+h1{font-family:var(--display);font-weight:400;font-size:2.2rem;color:var(--gold2);line-height:1}
+.lede{font-family:var(--fell);font-style:italic;color:#F1E6CFbb;margin-top:4px}
+.btn{font-family:var(--display);font-size:1.05rem;color:var(--ink);background:linear-gradient(180deg,var(--gold2),var(--gold));padding:12px 20px;border-radius:999px;min-height:46px}
+.ghost{font-family:var(--display);color:var(--gold2);border:1px solid var(--golddim);padding:9px 14px;border-radius:999px;font-size:.95rem;min-height:40px;text-decoration:none;display:inline-flex;align-items:center}
+.input{width:100%;background:#0000002e;border:1px solid #D4AF6A55;border-radius:12px;padding:13px 14px;font-size:1.05rem;color:var(--bone);outline:none}
+.input:focus{border-color:var(--gold2)}
+
+/* portão */
+.gate{min-height:90vh;display:flex;flex-direction:column;justify-content:center;gap:14px;max-width:380px;margin:0 auto}
+
+/* topo */
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:18px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px}
+.stat{border:1px solid #D4AF6A33;border-radius:14px;padding:12px;background:#F1E6CF06}
+.stat b{display:block;font-family:var(--display);font-weight:400;font-size:2rem;color:var(--gold2);line-height:1}
+.stat span{font-size:.85rem;color:#F1E6CFaa}
+.tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:16px;padding-bottom:4px}
+.tab{white-space:nowrap;padding:9px 14px;border-radius:999px;border:1px solid #D4AF6A40;font-size:.95rem}
+.tab.on{background:var(--gold);color:var(--ink);border-color:var(--gold2)}
+
+/* visitas */
+.list{display:flex;flex-direction:column;gap:12px}
+.v{display:grid;grid-template-columns:78px 1fr;gap:14px;padding:16px;border-radius:16px;background:linear-gradient(165deg,#2C193A,#1A0F24 70%,#0F282D);
+  box-shadow:inset 0 0 0 1px #7E663899}
+.v.confirmado{box-shadow:inset 0 0 0 1px var(--sage)}
+.v.cancelada{opacity:.55}
+.v-date{text-align:center;border-right:1px solid #D4AF6A33;padding-right:12px;display:flex;flex-direction:column;align-items:center}
+.v-date span{font-family:var(--fell);font-style:italic;font-size:.9rem;color:#F1E6CFbb}
+.v-date b{font-family:var(--display);font-weight:400;font-size:2.4rem;line-height:1;color:var(--bone)}
+.v-date em{font-style:normal;font-family:var(--display);color:var(--gold);font-size:1.1rem;margin-top:6px}
+.v h3{font-family:var(--display);font-weight:400;font-size:1.45rem;color:var(--gold2);line-height:1.1}
+.badge{display:inline-block;font-size:.75rem;padding:2px 8px;border-radius:999px;margin-left:6px;vertical-align:middle;border:1px solid currentColor}
+.badge.confirmado{color:var(--sage)}.badge.cancelada{color:var(--ember)}.badge.marcado{color:var(--gold)}
+.sum{margin-top:6px;font-size:.98rem}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.tag{font-size:.8rem;padding:4px 9px;border-radius:999px;background:#F1E6CF10;border:1px solid #D4AF6A30}
+details{margin-top:10px}
+summary{cursor:pointer;color:var(--gold);font-family:var(--fell);font-style:italic;font-size:1rem;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"✦ "}
+details[open] summary::before{content:"✧ "}
+dl{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;margin-top:10px;font-size:.93rem}
+dt{color:var(--gold);white-space:nowrap}
+dd{color:var(--bone)}
+.quote{margin-top:10px;padding:10px 12px;border-left:2px solid var(--gold);font-family:var(--fell);font-style:italic;font-size:1.05rem;background:#F1E6CF08;border-radius:0 10px 10px 0}
+.act{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.empty{text-align:center;padding:40px 10px;font-family:var(--fell);font-style:italic;color:#F1E6CFaa;font-size:1.1rem}
+
+/* convidados */
+.g{padding:14px 16px;border-radius:14px;border:1px solid #D4AF6A30;background:#F1E6CF06}
+.g h3{font-family:var(--display);font-weight:400;font-size:1.25rem;color:var(--gold2)}
+.g p{font-size:.9rem;color:#F1E6CFaa}
+
+/* convite */
+.invite{margin-top:32px;padding:18px;border-radius:16px;border:1px dashed #D4AF6A66;display:flex;flex-direction:column;gap:10px}
+.invite h2{font-family:var(--display);font-weight:400;color:var(--gold2);font-size:1.3rem}
+.link{font-size:.85rem;word-break:break-all;color:var(--gold)}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);opacity:0;background:var(--bone);color:var(--ink);padding:10px 16px;border-radius:12px;transition:all .3s;pointer-events:none;z-index:9}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <section class="gate" id="gate">
+    <h1>Sala dos anfitriões</h1>
+    <p class="lede">Só Dhione e Luh passam daqui.</p>
+    <input class="input" id="key" type="password" placeholder="Chave secreta" autocomplete="current-password">
+    <button class="btn" id="enter">Entrar</button>
+  </section>
+
+  <section id="app" hidden>
+    <div class="top">
+      <div><h1>Cafés</h1><p class="lede" id="today"></p></div>
+      <button class="ghost" id="reload">Atualizar</button>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="sNext">0</b><span>próximos</span></div>
+      <div class="stat"><b id="sWeek">0</b><span>nesta semana</span></div>
+      <div class="stat"><b id="sGuests">0</b><span>convidados</span></div>
+    </div>
+    <nav class="tabs" id="tabs">
+      <button class="tab on" data-tab="next">Próximos</button>
+      <button class="tab" data-tab="past">Já aconteceram</button>
+      <button class="tab" data-tab="cancel">Cancelados</button>
+      <button class="tab" data-tab="guests">Convidados</button>
+    </nav>
+    <div class="list" id="list"></div>
+
+    <section class="invite">
+      <h2>Gerar convite com nome</h2>
+      <input class="input" id="invName" placeholder="Nome de quem vai receber">
+      <p class="link" id="invLink"></p>
+      <div class="row">
+        <button class="ghost" id="invCopy">Copiar link</button>
+        <a class="ghost" id="invWa" target="_blank" rel="noopener">Mandar no WhatsApp</a>
+      </div>
+    </section>
+    <p style="text-align:center;margin-top:28px"><button class="ghost" id="logout">Sair</button></p>
+  </section>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const API_URL = '';   // mesma URL do Web App usada no index.html
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const WD = ['dom','seg','ter','qua','qui','sex','sáb'];
+const MO = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+const pd = s => { const [y,m,d] = String(s).split('-').map(Number); return new Date(y, m-1, d, 12); };
+const ymd = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+let KEY = localStorage.getItem('cafe_admin_key') || '';
+let DATA = { visitas:[], convidados:[] }, TAB = 'next';
+
+function toast(m){ const t = $('#toast'); t.textContent = m; t.classList.add('on'); setTimeout(() => t.classList.remove('on'), 2600); }
+
+async function api(action, payload = {}){
+  if (!API_URL) return mock(action, payload);
+  const r = await fetch(API_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({ action, key: KEY, ...payload }) });
+  return r.json();
+}
+function mock(action, b){
+  const db = JSON.parse(localStorage.getItem('cafe_mock') || '{"g":[],"v":[]}');
+  if (action === 'admin'){
+    const visitas = db.v.map(v => ({ ...(db.g.find(g => g.id === v.convidadoId)?.leitura || {}), ...v }));
+    const convidados = db.g.map(g => ({ ...(g.leitura || {}), id:g.id, nome:g.nome, email:g.email, telefone:g.telefone, criadoEm:g.criadoEm, atualizadoEm:g.atualizadoEm }));
+    return Promise.resolve({ ok:true, visitas, convidados });
+  }
+  if (action === 'status'){
+    const v = db.v.find(x => x.id === b.id); if (v) v.status = b.status;
+    localStorage.setItem('cafe_mock', JSON.stringify(db));
+    return Promise.resolve({ ok:true });
+  }
+}
+
+async function load(){
+  try{
+    const r = await api('admin');
+    if (!r.ok) throw new Error(r.error);
+    DATA = r; localStorage.setItem('cafe_admin_key', KEY);
+    $('#gate').hidden = true; $('#app').hidden = false;
+    render();
+  }catch(err){ toast(err.message || 'Não consegui carregar.'); localStorage.removeItem('cafe_admin_key'); $('#gate').hidden = false; $('#app').hidden = true; }
+}
+$('#enter').onclick = () => { KEY = $('#key').value.trim(); if (!KEY && API_URL) return toast('Digite a chave.'); load(); };
+$('#key').addEventListener('keydown', e => { if (e.key === 'Enter') $('#enter').click(); });
+$('#reload').onclick = () => load().then(() => toast('Atualizado.'));
+$('#logout').onclick = () => { localStorage.removeItem('cafe_admin_key'); location.reload(); };
+$('#tabs').onclick = e => { const b = e.target.closest('.tab'); if (!b) return; TAB = b.dataset.tab; document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t === b)); render(); };
+
+function weekBounds(){ const d = new Date(); d.setHours(12); const dow = d.getDay(); const mon = new Date(d); mon.setDate(d.getDate() - (dow === 0 ? 6 : dow - 1)); const fri = new Date(mon); fri.setDate(mon.getDate() + 4); return [ymd(mon), ymd(fri)]; }
+
+function render(){
+  const hoje = ymd(new Date()), [w0, w1] = weekBounds();
+  const vs = DATA.visitas.slice();
+  const next = vs.filter(v => v.status !== 'cancelada' && v.data >= hoje).sort((a,b) => (a.data + a.hora).localeCompare(b.data + b.hora));
+  const past = vs.filter(v => v.status !== 'cancelada' && v.data < hoje).sort((a,b) => (b.data + b.hora).localeCompare(a.data + a.hora));
+  const cancel = vs.filter(v => v.status === 'cancelada').sort((a,b) => b.data.localeCompare(a.data));
+  $('#sNext').textContent = next.length;
+  $('#sWeek').textContent = next.filter(v => v.data >= w0 && v.data <= w1).length;
+  $('#sGuests').textContent = DATA.convidados.length;
+  const d = new Date(); $('#today').textContent = `Hoje é ${['domingo','segunda','terça','quarta','quinta','sexta','sábado'][d.getDay()]}, ${d.getDate()} de ${MO[d.getMonth()]}.`;
+
+  const list = $('#list');
+  if (TAB === 'guests'){
+    const gs = DATA.convidados.slice().sort((a,b) => String(b.atualizadoEm).localeCompare(String(a.atualizadoEm)));
+    list.innerHTML = gs.length ? gs.map(guestCard).join('') : `<p class="empty">Ninguém respondeu o oráculo ainda.</p>`;
+    return;
+  }
+  const arr = TAB === 'next' ? next : TAB === 'past' ? past : cancel;
+  const emptyMsg = { next:'Nenhum café marcado. Hora de mandar convites.', past:'Nenhum café aconteceu ainda.', cancel:'Nenhum cancelamento.' }[TAB];
+  list.innerHTML = arr.length ? arr.map(visitCard).join('') : `<p class="empty">${emptyMsg}</p>`;
+}
+
+function tel(v){ const d = String(v.telefone || '').replace(/\D/g,''); return d.length >= 10 ? '55' + d : d; }
+function short(v){ return v ? String(v).split(' · ')[0] : ''; }
+
+function visitCard(v){
+  const d = pd(v.data), first = String(v.nome).split(' ')[0];
+  const tags = [
+    v.bebida && `☕ ${v.bebida}`,
+    v.pimenta && `🌶️ ${short(v.pimenta)}`,
+    v.erva && `❦ ${v.erva}`,
+    v.coracao && `♡ ${v.coracao}`,
+    v.olhar && `☽ ${v.olhar}`
+  ].filter(Boolean).map(t => `<span class="tag">${esc(t)}</span>`).join('');
+  const wa = `https://wa.me/${tel(v)}?text=${encodeURIComponent(`Oi ${first}! Aqui é Dhione e Luh. Tudo certo pro nosso café ${WD[d.getDay()]}, ${d.getDate()}/${d.getMonth()+1}, às ${v.hora}? ☕`)}`;
+  const status = v.status || 'marcado';
+  return `<article class="v ${status}">
+    <div class="v-date"><span>${WD[d.getDay()]}</span><b>${d.getDate()}</b><span>${MO[d.getMonth()]}</span><em>${esc(v.hora)}</em></div>
+    <div>
+      <h3>${esc(v.nome)}<span class="badge ${status}">${status}</span></h3>
+      <p class="sum">${esc(v.companhia || 'Vem só')}. ${v.oferenda && v.oferenda !== 'Nada' ? `Traz: ${esc(v.oferenda)}.` : 'Não vai trazer nada.'}</p>
+      <div class="tags">${tags}</div>
+      ${v.recado ? `<p class="quote">“${esc(v.recado)}”</p>` : ''}
+      <details><summary>Leitura completa</summary>${leituraDL(v)}
+        <dl><dt>Dado</dt><dd>${esc(v.dado)} · ${esc(v.bencao)}</dd><dt>Contato</dt><dd>${esc(v.email)} · ${esc(v.telefone)}</dd><dt>Marcado em</dt><dd>${esc(v.criadoEm)}</dd></dl>
+      </details>
+      <div class="act">
+        <a class="ghost" href="${wa}" target="_blank" rel="noopener">WhatsApp</a>
+        ${status !== 'confirmado' && status !== 'cancelada' ? `<button class="ghost" onclick="setStatus('${v.id}','confirmado')">Confirmar</button>` : ''}
+        ${status !== 'cancelada' ? `<button class="ghost" onclick="setStatus('${v.id}','cancelada')">Cancelar</button>` : `<button class="ghost" onclick="setStatus('${v.id}','marcado')">Reativar</button>`}
+      </div>
+    </div>
+  </article>`;
+}
+function leituraDL(o){
+  const rows = [['Bebida','bebida'],['No prato','comida'],['Restrições','restricoes'],['Música','musica'],['Coração','coracao'],['Olhar','olhar'],['Conversas','conversas'],['Jogos','jogos'],['Pimenta','pimenta'],['Erva','erva'],['Sobre','sobre']];
+  return `<dl>${rows.filter(([,k]) => o[k]).map(([l,k]) => `<dt>${l}</dt><dd>${esc(o[k])}</dd>`).join('')}</dl>`;
+}
+function guestCard(g){
+  const n = DATA.visitas.filter(v => v.convidadoId === g.id && v.status !== 'cancelada').length;
+  return `<article class="g"><h3>${esc(g.nome)}</h3><p>${esc(g.email)} · ${esc(g.telefone)} · ${n} café${n === 1 ? '' : 's'}</p>
+    <details><summary>Leitura</summary>${leituraDL(g)}</details></article>`;
+}
+async function setStatus(id, status){
+  const msg = { cancelada:'Cancelar este café? O dia volta a ficar livre.', confirmado:null, marcado:null }[status];
+  if (msg && !confirm(msg)) return;
+  const r = await api('status', { id, status });
+  if (!r.ok) return toast(r.error);
+  const v = DATA.visitas.find(x => x.id === id); if (v) v.status = status;
+  render(); toast(status === 'confirmado' ? 'Confirmado.' : status === 'cancelada' ? 'Cancelado.' : 'Reativado.');
+}
+
+/* convite com nome */
+function base(){ return location.href.replace(/admin\.html.*$/, '').replace(/[?#].*$/, ''); }
+function updInvite(){
+  const n = $('#invName').value.trim();
+  const url = base() + (n ? `?para=${encodeURIComponent(n)}` : '');
+  $('#invLink').textContent = url;
+  $('#invWa').href = `https://wa.me/?text=${encodeURIComponent(`${n ? n + ', u' : 'U'}m chamado chegou pra você ☉ Abre com som ligado: ${url}`)}`;
+}
+$('#invName').addEventListener('input', updInvite);
+$('#invCopy').onclick = async () => { try{ await navigator.clipboard.writeText($('#invLink').textContent); toast('Link copiado.'); }catch(_){ toast('Não consegui copiar. Segure o link para copiar.'); } };
+updInvite();
+
+if (KEY || !API_URL) load();
+</script>
+</body>
+</html>
