@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=IM+Fell+English:ital@0;1&family=Spectral:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet">
+<script src="config.js"></script>
 <style>
 :root{--ink:#140B1B;--plum:#1E1228;--plum2:#2A1838;--teal:#0F3A3E;--gold:#D4AF6A;--gold2:#F0D79A;--golddim:#7E6638;--ember:#E8602C;--bone:#F1E6CF;--sage:#8FB39A;
   --display:'IM Fell English SC',Georgia,serif;--fell:'IM Fell English',Georgia,serif;--body:'Spectral',Georgia,serif}
@@ -78,6 +79,10 @@ dd{color:var(--bone)}
 .invite h2{font-family:var(--display);font-weight:400;color:var(--gold2);font-size:1.3rem}
 .link{font-size:.85rem;word-break:break-all;color:var(--gold)}
 .row{display:flex;gap:8px;flex-wrap:wrap}
+.demo{background:#E8602C;color:#140B1B;padding:10px 14px;border-radius:12px;font-size:.92rem;margin-bottom:16px}
+.fx{display:inline-block;font-size:.75rem;padding:2px 8px;border-radius:999px;margin-left:6px;vertical-align:middle;background:#7B2D35;color:#F9D4C0}
+.fx.mono{background:#2A4A4E;color:#CFE6E2}
+.err{color:#F3A08C;font-size:.95rem}
 .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);opacity:0;background:var(--bone);color:var(--ink);padding:10px 16px;border-radius:12px;transition:all .3s;pointer-events:none;z-index:9}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 </style>
@@ -88,11 +93,13 @@ dd{color:var(--bone)}
   <section class="gate" id="gate">
     <h1>Sala dos anfitriões</h1>
     <p class="lede">Só Dhione e Luh passam daqui.</p>
+    <p class="err" id="gateErr"></p>
     <input class="input" id="key" type="password" placeholder="Chave secreta" autocomplete="current-password">
     <button class="btn" id="enter">Entrar</button>
   </section>
 
   <section id="app" hidden>
+    <p class="demo" id="demo" hidden>Modo demonstração: o <b>API_URL</b> está vazio no config.js, então aqui só aparecem testes feitos neste mesmo aparelho. Cole a URL do Apps Script no config.js para ver os agendamentos reais.</p>
     <div class="top">
       <div><h1>Cafés</h1><p class="lede" id="today"></p></div>
       <button class="ghost" id="reload">Atualizar</button>
@@ -125,7 +132,7 @@ dd{color:var(--bone)}
 <div class="toast" id="toast"></div>
 
 <script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbxvSgYUFRWCRn_IukwBLN8cdj5A1xvfB4Z_pVEk7HGVLmbVYiTdwvgmqjrsm3bD8mHJ/exec';   // mesma URL do Web App usada no index.html
+const API_URL = window.CAFE.API_URL;
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -140,14 +147,13 @@ function toast(m){ const t = $('#toast'); t.textContent = m; t.classList.add('on
 
 async function api(action, payload = {}){
   if (!API_URL) return mock(action, payload);
-  const r = await fetch(API_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({ action, key: KEY, ...payload }) });
-  return r.json();
+  return window.cafeApi(action, { key: KEY, ...payload });
 }
 function mock(action, b){
   const db = JSON.parse(localStorage.getItem('cafe_mock') || '{"g":[],"v":[]}');
   if (action === 'admin'){
-    const visitas = db.v.map(v => ({ ...(db.g.find(g => g.id === v.convidadoId)?.leitura || {}), ...v }));
-    const convidados = db.g.map(g => ({ ...(g.leitura || {}), id:g.id, nome:g.nome, email:g.email, telefone:g.telefone, criadoEm:g.criadoEm, atualizadoEm:g.atualizadoEm }));
+    const visitas = db.v.map(v => { const g = db.g.find(g => g.id === v.convidadoId) || {}; return { ...v, fluxo: v.fluxo || g.fluxo, leitura: Array.isArray(g.leitura) ? g.leitura : [] }; });
+    const convidados = db.g.map(g => ({ id:g.id, nome:g.nome, email:g.email, telefone:g.telefone, fluxo:g.fluxo, criadoEm:g.criadoEm, atualizadoEm:g.atualizadoEm, leitura: Array.isArray(g.leitura) ? g.leitura : [] }));
     return Promise.resolve({ ok:true, visitas, convidados });
   }
   if (action === 'status'){
@@ -162,9 +168,13 @@ async function load(){
     const r = await api('admin');
     if (!r.ok) throw new Error(r.error);
     DATA = r; localStorage.setItem('cafe_admin_key', KEY);
-    $('#gate').hidden = true; $('#app').hidden = false;
+    $('#gate').hidden = true; $('#app').hidden = false; $('#demo').hidden = !!API_URL; $('#gateErr').textContent = '';
     render();
-  }catch(err){ toast(err.message || 'Não consegui carregar.'); localStorage.removeItem('cafe_admin_key'); $('#gate').hidden = false; $('#app').hidden = true; }
+  }catch(err){
+    const m = err.message || 'Não consegui carregar.'; toast(m); $('#gateErr').textContent = m;
+    if (/chave/i.test(m)){ localStorage.removeItem('cafe_admin_key'); KEY = ''; }
+    if ($('#app').hidden) $('#gate').hidden = false;
+  }
 }
 $('#enter').onclick = () => { KEY = $('#key').value.trim(); if (!KEY && API_URL) return toast('Digite a chave.'); load(); };
 $('#key').addEventListener('keydown', e => { if (e.key === 'Enter') $('#enter').click(); });
@@ -197,23 +207,26 @@ function render(){
 }
 
 function tel(v){ const d = String(v.telefone || '').replace(/\D/g,''); return d.length >= 10 ? '55' + d : d; }
-function short(v){ return v ? String(v).split(' · ')[0] : ''; }
+const L = (o, k) => { const x = (o.leitura || []).find(x => x.k === k); return x ? x.v : ''; };
+const isSpicy = f => f && !/mono|não dizer/i.test(f);
+const fx = f => f ? `<span class="fx ${isSpicy(f) ? '' : 'mono'}">${isSpicy(f) ? '🔥 ' : ''}${esc(f)}</span>` : '';
 
 function visitCard(v){
   const d = pd(v.data), first = String(v.nome).split(' ')[0];
   const tags = [
-    v.bebida && `☕ ${v.bebida}`,
-    v.pimenta && `🌶️ ${short(v.pimenta)}`,
-    v.erva && `❦ ${v.erva}`,
-    v.coracao && `♡ ${v.coracao}`,
-    v.olhar && `☽ ${v.olhar}`
+    L(v,'bebida') && `☕ ${L(v,'bebida')}`,
+    L(v,'comida') && `🍽 ${L(v,'comida')}`,
+    L(v,'pimenta') && `🌶️ ${L(v,'pimenta').split(' ')[0]}`,
+    L(v,'olhar') && `☽ ${L(v,'olhar')}`,
+    L(v,'situacao') && `∞ ${L(v,'situacao')}`,
+    L(v,'erva') && `❦ ${L(v,'erva')}`
   ].filter(Boolean).map(t => `<span class="tag">${esc(t)}</span>`).join('');
   const wa = `https://wa.me/${tel(v)}?text=${encodeURIComponent(`Oi ${first}! Aqui é Dhione e Luh. Tudo certo pro nosso café ${WD[d.getDay()]}, ${d.getDate()}/${d.getMonth()+1}, às ${v.hora}? ☕`)}`;
   const status = v.status || 'marcado';
   return `<article class="v ${status}">
     <div class="v-date"><span>${WD[d.getDay()]}</span><b>${d.getDate()}</b><span>${MO[d.getMonth()]}</span><em>${esc(v.hora)}</em></div>
     <div>
-      <h3>${esc(v.nome)}<span class="badge ${status}">${status}</span></h3>
+      <h3>${esc(v.nome)}<span class="badge ${status}">${status}</span>${fx(v.fluxo)}</h3>
       <p class="sum">${esc(v.companhia || 'Vem só')}. ${v.oferenda && v.oferenda !== 'Nada' ? `Traz: ${esc(v.oferenda)}.` : 'Não vai trazer nada.'}</p>
       <div class="tags">${tags}</div>
       ${v.recado ? `<p class="quote">“${esc(v.recado)}”</p>` : ''}
@@ -229,12 +242,13 @@ function visitCard(v){
   </article>`;
 }
 function leituraDL(o){
-  const rows = [['Bebida','bebida'],['No prato','comida'],['Restrições','restricoes'],['Música','musica'],['Coração','coracao'],['Olhar','olhar'],['Conversas','conversas'],['Jogos','jogos'],['Pimenta','pimenta'],['Erva','erva'],['Sobre','sobre']];
-  return `<dl>${rows.filter(([,k]) => o[k]).map(([l,k]) => `<dt>${l}</dt><dd>${esc(o[k])}</dd>`).join('')}</dl>`;
+  const rows = o.leitura || [];
+  if (!rows.length) return `<p class="lede" style="margin-top:8px">Sem respostas guardadas.</p>`;
+  return `<dl>${rows.map(x => `<dt>${esc(x.l)}</dt><dd>${esc(x.v)}</dd>`).join('')}</dl>`;
 }
 function guestCard(g){
   const n = DATA.visitas.filter(v => v.convidadoId === g.id && v.status !== 'cancelada').length;
-  return `<article class="g"><h3>${esc(g.nome)}</h3><p>${esc(g.email)} · ${esc(g.telefone)} · ${n} café${n === 1 ? '' : 's'}</p>
+  return `<article class="g"><h3>${esc(g.nome)}${fx(g.fluxo)}</h3><p>${esc(g.email)} · ${esc(g.telefone)} · ${n} café${n === 1 ? '' : 's'}</p>
     <details><summary>Leitura</summary>${leituraDL(g)}</details></article>`;
 }
 async function setStatus(id, status){
