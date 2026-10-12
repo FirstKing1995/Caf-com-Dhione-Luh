@@ -238,7 +238,7 @@ body.spicy .sw-card{background:linear-gradient(160deg,#FCECE4,#F0C9B8)}
 .stepper b{font-family:var(--pix);font-size:1.8rem;min-width:1.2em;text-align:center;color:var(--gold2)}
 
 /* calendário */
-.cal-h,.cal-w{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.cal-h,.cal-w{display:grid;grid-template-columns:repeat(var(--cols,5),1fr);gap:5px}
 .cal-h span{text-align:center;font-size:.8rem;color:var(--gold)}
 .cal-m{font-family:var(--display);color:var(--gold2);font-size:1rem;margin:12px 0 6px}
 .cal-w{margin-bottom:6px}
@@ -248,8 +248,9 @@ body.spicy .sw-card{background:linear-gradient(160deg,#FCECE4,#F0C9B8)}
 .day.past{opacity:.15;border-color:transparent}
 .day.taken{background:repeating-linear-gradient(45deg,rgba(232,96,44,.1) 0 6px,transparent 6px 12px);opacity:.75}
 .day.sel{background:linear-gradient(180deg,var(--gold2),var(--gold));color:var(--ink);border-color:var(--gold2);box-shadow:0 0 18px var(--glow)}
-.horas{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
-.hora{font-family:var(--pix);font-size:1.6rem;padding:18px 0;border-radius:14px;border:1px solid var(--line);background:var(--wash);box-shadow:0 4px 0 rgba(0,0,0,.3)}
+.horas{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:10px}
+.hora[disabled]{opacity:.3;text-decoration:line-through;box-shadow:none}
+.hora{font-family:var(--pix);font-size:1.3rem;padding:16px 0;border-radius:14px;border:1px solid var(--line);background:var(--wash);box-shadow:0 4px 0 rgba(0,0,0,.3)}
 .hora.sel{background:linear-gradient(180deg,var(--gold2),var(--gold));color:var(--ink);box-shadow:0 4px 0 var(--golddim)}
 
 /* ================= mascote ================= */
@@ -466,6 +467,8 @@ body.spicy .mascot .eye.r{animation:wink 5s infinite}
       </div>
       <button class="btn wide" id="p2Go">Bora jogar</button>
       <button class="ghost wide" id="p2Keep" hidden></button>
+      <button class="ghost wide" id="p2Copy"></button>
+      <button class="textlink" id="p2Skip">Prefiro não responder (mas eu vou!)</button>
       <button class="textlink" id="p2Back">Voltar</button>
     </div>
   </section>

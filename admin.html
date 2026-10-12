@@ -95,6 +95,48 @@ dd{color:var(--bone)}
 .err{color:#F3A08C;font-size:.95rem}
 .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);opacity:0;background:var(--bone);color:var(--ink);padding:10px 16px;border-radius:12px;transition:all .3s;pointer-events:none;z-index:9}
 .toast.on{opacity:1;transform:translate(-50%,0)}
+
+/* agenda */
+.ag{display:flex;flex-direction:column;gap:14px}
+.card{padding:16px;border-radius:16px;background:linear-gradient(165deg,#2C193A,#1A0F24 70%,#0F282D);box-shadow:inset 0 0 0 1px #7E663899}
+.card h2{font-family:var(--display);font-weight:400;font-size:1.25rem;color:var(--gold2);line-height:1.1}
+.card .hint{font-family:var(--fell);font-style:italic;font-size:.95rem;color:#F1E6CFaa;margin-top:4px}
+.dchips{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:12px}
+.dchip{font-family:var(--display);font-size:.95rem;min-height:44px;border-radius:12px;border:1px solid #D4AF6A55;color:var(--gold2);padding:0}
+.dchip.on{background:var(--gold);color:var(--ink);border-color:var(--gold2)}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.fields .fld:last-child{grid-column:1/-1}
+.fields label,.fld{display:flex;flex-direction:column;gap:5px;font-family:var(--fell);font-size:.9rem;color:#F1E6CFcc;min-width:0}
+.fields .input,.fld .input{padding:10px 10px;font-size:1rem;min-height:44px;color-scheme:dark}
+select.input{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--gold) 50%),linear-gradient(135deg,var(--gold) 50%,transparent 50%);background-position:calc(100% - 17px) 50%,calc(100% - 12px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:28px}
+select.input option{background:var(--plum);color:var(--bone)}
+.pv{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.pv span{font-size:.82rem;padding:3px 9px;border-radius:999px;background:#F1E6CF10;border:1px solid #D4AF6A30;font-variant-numeric:tabular-nums}
+.sw{display:flex;align-items:center;justify-content:space-between;gap:14px;width:100%;text-align:left;margin-top:2px}
+.sw b{font-family:var(--display);font-weight:400;font-size:1.15rem;color:var(--gold2);display:block}
+.sw small{display:block;font-family:var(--fell);font-style:italic;font-size:.92rem;color:#F1E6CFaa}
+.knob{flex:none;width:50px;height:30px;border-radius:999px;background:#0000004d;border:1px solid #D4AF6A66;position:relative;transition:background .2s}
+.knob::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--bone);transition:transform .2s}
+.sw[aria-checked=true] .knob{background:var(--gold)}
+.sw[aria-checked=true] .knob::after{transform:translateX(20px);background:var(--ink)}
+.mon{font-family:var(--display);color:var(--gold2);font-size:1.05rem;margin:16px 0 6px;text-transform:capitalize}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal .h{text-align:center;font-size:.72rem;color:var(--golddim);font-family:var(--display)}
+.dc{min-height:50px;border-radius:10px;border:1px solid #D4AF6A33;background:#F1E6CF08;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:2px;min-width:0;overflow:hidden}
+.dc b{font-family:var(--display);font-weight:400;font-size:1.05rem;line-height:1;color:var(--bone)}
+.dc i{font-style:normal;font-size:.6rem;line-height:1.1;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--gold2)}
+.dc.blank{border:0;background:none;visibility:hidden}
+.dc.out,.dc.off{opacity:.28;cursor:default}
+.dc.out{background:none;border-style:dashed}
+.dc.booked{border-color:var(--sage);background:#8FB39A1f}
+.dc.blocked{border-color:#E8602C;color:#FFD9C7;background:repeating-linear-gradient(135deg,#E8602C33 0 5px,#E8602C0f 5px 10px)}
+.dc.blocked i{color:#FFD9C7;font-size:.5rem;letter-spacing:-.02em;text-overflow:clip}
+.bl{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.bl button{font-size:.85rem;padding:6px 10px;border-radius:999px;border:1px solid #E8602C99;background:#E8602C1f;color:#FFD9C7;min-height:36px}
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;font-size:.78rem;color:#F1E6CFaa}
+.legend s{display:inline-block;width:12px;height:12px;border-radius:4px;vertical-align:-2px;margin-right:5px;text-decoration:none}
+.note{margin-top:8px;font-family:var(--fell);font-style:italic;font-size:.95rem;color:var(--sage)}
+@media (max-width:380px){.dchip{font-size:.85rem}.dc i{font-size:.55rem}.dc.blocked i{font-size:.48rem}}
 </style>
 </head>
 <body>
@@ -124,6 +166,7 @@ dd{color:var(--bone)}
       <button class="tab" data-tab="past">Já aconteceram</button>
       <button class="tab" data-tab="cancel">Cancelados</button>
       <button class="tab" data-tab="guests">Convidados</button>
+      <button class="tab" data-tab="agenda">Agenda</button>
     </nav>
     <div class="list" id="list"></div>
 
@@ -151,16 +194,40 @@ const MO = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','d
 const pd = s => { const [y,m,d] = String(s).split('-').map(Number); return new Date(y, m-1, d, 12); };
 const ymd = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 let KEY = localStorage.getItem('cafe_admin_key') || '';
-let DATA = { visitas:[], convidados:[] }, TAB = 'next';
+let DATA = { visitas:[], convidados:[] }, TAB = 'next', CFG = null, AG = null;
 
-function toast(m){ const t = $('#toast'); t.textContent = m; t.classList.add('on'); setTimeout(() => t.classList.remove('on'), 2600); }
+let toastT; function toast(m){ const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), m.length > 40 ? 4200 : 2600); }
+const clone = o => JSON.parse(JSON.stringify(o));
 
 async function api(action, payload = {}){
   if (!API_URL) return mock(action, payload);
   return window.cafeApi(action, { key: KEY, ...payload });
 }
+const CFG_DEF = { dias:[1,2,3,4,5,6], horaIni:'17:00', horaFim:'18:30', intervalo:15, bloqueios:[], diasAFrente:35, umPorDia:true };
+const toMin = t => { const m = /^(\d{1,2}):(\d{2})$/.exec(String(t||'')); return m && +m[1] < 24 && +m[2] < 60 ? +m[1]*60 + +m[2] : -1; };
+const fmtMin = t => `${String(Math.floor(t/60)).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`;
+function horasOf(c){ const a = toMin(c.horaIni), z = toMin(c.horaFim), st = +c.intervalo, out = []; if (a < 0 || z < 0 || !(st > 0)) return out; for (let t = a; t <= z; t += st) out.push(fmtMin(t)); return out; }
+function cfgFull(c){ const o = { ...CFG_DEF, ...(c || {}) }; o.horas = horasOf(o); return o; }
+function mockCfgSave(c){
+  const dias = [...new Set((c.dias || []).map(Number))].filter(n => n >= 0 && n <= 6).sort();
+  if (!dias.length) throw new Error('Escolha pelo menos um dia da semana.');
+  if (toMin(c.horaIni) < 0 || toMin(c.horaFim) < 0) throw new Error('Horário inválido. Use o formato 17:00.');
+  if (toMin(c.horaIni) > toMin(c.horaFim)) throw new Error('O primeiro horário não pode ser depois do último.');
+  if (![10,15,20,30,60].includes(+c.intervalo)) throw new Error('Intervalo deve ser 10, 15, 20, 30 ou 60 minutos.');
+  const fr = +c.diasAFrente; if (!(fr >= 1 && fr <= 180)) throw new Error('Dias à frente deve ficar entre 1 e 180.');
+  const hoje = ymd(new Date());
+  const bl = [...new Set((c.bloqueios || []).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d) && d >= hoje))].sort();
+  return { dias, horaIni: fmtMin(toMin(c.horaIni)), horaFim: fmtMin(toMin(c.horaFim)), intervalo: +c.intervalo, bloqueios: bl, diasAFrente: Math.floor(fr), umPorDia: !!c.umPorDia };
+}
 function mock(action, b){
   const db = JSON.parse(localStorage.getItem('cafe_mock') || '{"g":[],"v":[]}');
+  db.g = db.g || []; db.v = db.v || [];
+  if (action === 'config'){
+    try{
+      if (b.config){ db.config = mockCfgSave(b.config); localStorage.setItem('cafe_mock', JSON.stringify(db)); }
+      return Promise.resolve({ ok:true, config: cfgFull(db.config) });
+    }catch(e){ return Promise.resolve({ ok:false, error:e.message }); }
+  }
   if (action === 'admin'){
     const arr = x => Array.isArray(x) ? x : [];
     const visitas = db.v.map(v => {
@@ -173,7 +240,9 @@ function mock(action, b){
     });
     const convidados = db.g.map(g => ({ id:g.id, nome:g.nome, email:g.email, telefone:g.telefone, fluxo:g.fluxo, criadoEm:g.criadoEm, atualizadoEm:g.atualizadoEm, leitura: arr(g.leitura),
       parNome: (g.par && g.par.nome) || '', parFluxo: (g.par && g.par.fluxo) || '', parLeitura: arr(g.par && g.par.leitura) }));
-    return Promise.resolve({ ok:true, visitas, convidados });
+    const hoje = ymd(new Date());
+    const booked = db.v.filter(v => v.data >= hoje && v.status !== 'cancelada').map(v => ({ data:v.data, hora:v.hora }));
+    return Promise.resolve({ ok:true, visitas, convidados, booked, config: cfgFull(db.config) });
   }
   if (action === 'status'){
     const v = db.v.find(x => x.id === b.id); if (v) v.status = b.status;
@@ -187,6 +256,8 @@ async function load(){
     const r = await api('admin');
     if (!r.ok) throw new Error(r.error);
     DATA = r; localStorage.setItem('cafe_admin_key', KEY);
+    if (!r.config){ try{ const c = await api('config'); if (c && c.ok) r.config = c.config; }catch(_){} }
+    if (r.config){ CFG = r.config; if (!AG || !AGDIRTY) AG = clone(CFG); }
     $('#gate').hidden = true; $('#app').hidden = false; $('#demo').hidden = !!API_URL; $('#gateErr').textContent = '';
     render();
   }catch(err){
@@ -201,7 +272,7 @@ $('#reload').onclick = () => load().then(() => toast('Atualizado.'));
 $('#logout').onclick = () => { localStorage.removeItem('cafe_admin_key'); location.reload(); };
 $('#tabs').onclick = e => { const b = e.target.closest('.tab'); if (!b) return; TAB = b.dataset.tab; document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t === b)); render(); };
 
-function weekBounds(){ const d = new Date(); d.setHours(12); const dow = d.getDay(); const mon = new Date(d); mon.setDate(d.getDate() - (dow === 0 ? 6 : dow - 1)); const fri = new Date(mon); fri.setDate(mon.getDate() + 4); return [ymd(mon), ymd(fri)]; }
+function weekBounds(){ const d = new Date(); d.setHours(12); const dow = d.getDay(); const mon = new Date(d); mon.setDate(d.getDate() - (dow === 0 ? 6 : dow - 1)); const fri = new Date(mon); fri.setDate(mon.getDate() + 6); return [ymd(mon), ymd(fri)]; }
 
 function render(){
   const hoje = ymd(new Date()), [w0, w1] = weekBounds();
@@ -215,6 +286,7 @@ function render(){
   const d = new Date(); $('#today').textContent = `Hoje é ${['domingo','segunda','terça','quarta','quinta','sexta','sábado'][d.getDay()]}, ${d.getDate()} de ${MO[d.getMonth()]}.`;
 
   const list = $('#list');
+  if (TAB === 'agenda'){ renderAgenda(); return; }
   if (TAB === 'guests'){
     const gs = DATA.convidados.slice().sort((a,b) => String(b.atualizadoEm).localeCompare(String(a.atualizadoEm)));
     list.innerHTML = gs.length ? gs.map(guestCard).join('') : `<p class="empty">Ninguém respondeu o oráculo ainda.</p>`;
@@ -256,12 +328,16 @@ function visitCard(v){
   const status = v.status || 'marcado';
   const pts = (v.pontos !== undefined && v.pontos !== null && String(v.pontos) !== '') || v.titulo
     ? `<p class="pts">🏆 ${[String(v.pontos ?? '') !== '' ? `${esc(v.pontos)} pts` : '', v.titulo ? esc(v.titulo) : ''].filter(Boolean).join(' · ')}</p>` : '';
+  const modoRow = (v.parLeitura || []).find(x => x && x.k === 'modo'), modoTxt = modoRow ? String(modoRow.v || '') : '';
+  const skipped = !!modoRow && /n[ãa]o responder|pulou/i.test(modoTxt);
+  const modoNote = modoRow && !skipped ? `<p class="ppl">${esc(first(v.parNome))} ${esc(modoTxt.charAt(0).toLowerCase() + modoTxt.slice(1))}</p>` : '';
+  const parLabel = skipped ? `${esc(first(v.parNome))} ${esc(modoTxt.charAt(0).toLowerCase() + modoTxt.slice(1))}` : `Olhar de ${esc(first(v.parNome))}${fx(v.parFluxo)}`;
   const chips = hasPar ? `<div class="who">
         <button class="chip ${sel === 'g' ? 'on' : ''}" aria-pressed="${sel === 'g'}" onclick="pick('${v.id}','g')">Olhar de ${esc(fn)}${fx(v.fluxo)}</button>
         ${parOk
-          ? `<button class="chip ${sel === 'p' ? 'on' : ''}" aria-pressed="${sel === 'p'}" onclick="pick('${v.id}','p')">Olhar de ${esc(first(v.parNome))}${fx(v.parFluxo)}</button>`
+          ? `<button class="chip ${sel === 'p' ? 'on' : ''}" aria-pressed="${sel === 'p'}" onclick="pick('${v.id}','p')">${parLabel}</button>`
           : `<button class="chip" disabled>${esc(first(v.parNome))} não respondeu</button>`}
-      </div>` : '';
+      </div>${modoNote}` : '';
   return `<article class="v ${status}" data-id="${esc(v.id)}">
     <div class="v-date"><span>${WD[d.getDay()]}</span><b>${d.getDate()}</b><span>${MO[d.getMonth()]}</span><em>${esc(v.hora)}</em></div>
     <div>
@@ -314,6 +390,97 @@ async function setStatus(id, status){
   if (!r.ok) return toast(r.error);
   const v = DATA.visitas.find(x => x.id === id); if (v) v.status = status;
   render(); toast(status === 'confirmado' ? 'Confirmado.' : status === 'cancelada' ? 'Cancelado.' : 'Reativado.');
+}
+
+/* agenda */
+let AGDIRTY = false;
+const WDL = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const MONTHS = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+function bookedMap(){
+  const hoje = ymd(new Date()), m = {};
+  DATA.visitas.filter(v => v.status !== 'cancelada' && v.data >= hoje).forEach(v => { (m[v.data] = m[v.data] || []).push(first(v.nome)); });
+  return m;
+}
+function renderAgenda(){
+  if (!AG){ $('#list').innerHTML = `<p class="empty">Carregando a agenda…</p>`; return; }
+  $('#list').innerHTML = `<div class="ag">
+    <section class="card"><h2>Dias do café</h2><p class="hint">Toque nos dias da semana em que vocês recebem.</p>
+      <div class="dchips" id="agDias">${WDL.map((n,i) => `<button class="dchip" data-d="${i}">${n}</button>`).join('')}</div></section>
+    <section class="card"><h2>Horários</h2>
+      <div class="fields">
+        <label class="fld">Primeiro horário<input class="input" type="time" id="agIni"></label>
+        <label class="fld">Último horário<input class="input" type="time" id="agFim"></label>
+        <label class="fld">Intervalo<select class="input" id="agInt">${[10,15,20,30,60].map(n => `<option value="${n}">${n} min</option>`).join('')}</select></label>
+      </div><div class="pv" id="agPv"></div></section>
+    <section class="card">
+      <button class="sw" id="agUm" role="switch"><span><b>Um café por dia</b><small>Desligado = um café por horário.</small></span><span class="knob"></span></button>
+      <label class="fld" style="margin-top:14px">Dias à frente<input class="input" type="number" inputmode="numeric" min="1" max="180" id="agFr"></label>
+      <p class="hint">Até quantos dias no futuro os convidados podem marcar.</p></section>
+    <section class="card"><h2>Calendário</h2><p class="hint">Toque numa data para bloquear ou liberar.</p>
+      <div class="legend"><span><s style="background:#E8602C66"></s>bloqueado</span><span><s style="background:#8FB39A66"></s>já tem café</span><span><s style="background:#F1E6CF22"></s>livre</span></div>
+      <div id="agCal"></div><div class="bl" id="agBl"></div></section>
+    <button class="btn" id="agSave">Salvar agenda</button>
+  </div>`;
+  $('#agIni').value = AG.horaIni; $('#agFim').value = AG.horaFim; $('#agInt').value = String(AG.intervalo); $('#agFr').value = AG.diasAFrente;
+  agSync();
+  $('#agDias').onclick = e => { const b = e.target.closest('.dchip'); if (!b) return; const n = +b.dataset.d, i = AG.dias.indexOf(n); if (i < 0) AG.dias.push(n); else AG.dias.splice(i,1); AG.dias.sort(); AGDIRTY = true; agSync(); };
+  const onTime = () => { AG.horaIni = $('#agIni').value; AG.horaFim = $('#agFim').value; AG.intervalo = +$('#agInt').value; AGDIRTY = true; agPreview(); };
+  ['#agIni','#agFim','#agInt'].forEach(q => { $(q).oninput = onTime; $(q).onchange = onTime; });
+  $('#agUm').onclick = () => { AG.umPorDia = !AG.umPorDia; AGDIRTY = true; agSync(); };
+  $('#agFr').oninput = () => { AG.diasAFrente = $('#agFr').value === '' ? '' : Math.floor(+$('#agFr').value); AGDIRTY = true; agCal(); };
+  $('#agCal').onclick = e => {
+    const b = e.target.closest('.dc[data-date]'); if (!b || b.classList.contains('out') || (b.classList.contains('off') && !b.classList.contains('blocked'))) return;
+    const d = b.dataset.date, i = AG.bloqueios.indexOf(d), who = bookedMap()[d];
+    if (i < 0){
+      if (who && !confirm(`Já tem café marcado com ${who.join(' e ')} nesse dia. Bloquear mesmo assim? (o café marcado continua na lista)`)) return;
+      AG.bloqueios.push(d); AG.bloqueios.sort();
+    } else AG.bloqueios.splice(i,1);
+    AGDIRTY = true; agCal();
+  };
+  $('#agBl').onclick = e => { const b = e.target.closest('button[data-date]'); if (!b) return; AG.bloqueios = AG.bloqueios.filter(x => x !== b.dataset.date); AGDIRTY = true; agCal(); };
+  $('#agSave').onclick = agSave;
+}
+function agSync(){
+  document.querySelectorAll('#agDias .dchip').forEach(b => { const on = AG.dias.includes(+b.dataset.d); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+  $('#agUm').setAttribute('aria-checked', !!AG.umPorDia);
+  agPreview(); agCal();
+}
+function agPreview(){
+  const h = horasOf(AG), el = $('#agPv');
+  el.innerHTML = h.length && toMin(AG.horaIni) <= toMin(AG.horaFim) ? h.map(x => `<span>${x}</span>`).join('') : `<p class="err">O primeiro horário precisa vir antes do último.</p>`;
+}
+function agCal(){
+  if (!$('#agCal')) return;
+  const bk = bookedMap(), t0 = new Date(); t0.setHours(12,0,0,0);
+  const start = new Date(t0); start.setDate(start.getDate() + 1);
+  const n = Math.max(1, Math.min(180, +AG.diasAFrente || 1)), end = new Date(t0); end.setDate(end.getDate() + n);
+  let html = '', cur = new Date(start.getFullYear(), start.getMonth(), 1, 12);
+  while (cur <= end){
+    const y = cur.getFullYear(), m = cur.getMonth(), last = new Date(y, m+1, 0).getDate();
+    html += `<h3 class="mon">${MONTHS[m]} ${y}</h3><div class="cal">${WD.map(w => `<span class="h">${w.slice(0,3)}</span>`).join('')}`;
+    html += '<span class="dc blank"></span>'.repeat(new Date(y, m, 1, 12).getDay());
+    for (let d = 1; d <= last; d++){
+      const dt = new Date(y, m, d, 12), key = ymd(dt), inR = dt >= start && dt <= end, off = !AG.dias.includes(dt.getDay());
+      const bl = AG.bloqueios.includes(key), who = bk[key];
+      const cls = ['dc', !inR && 'out', inR && off && 'off', bl && 'blocked', who && !bl && 'booked'].filter(Boolean).join(' ');
+      const sub = bl ? 'bloqueado' : who ? esc(who[0]) + (who.length > 1 ? '+' : '') : '';
+      html += `<button class="${cls}" data-date="${key}" aria-label="${d} de ${MONTHS[m]}${bl ? ', bloqueado' : who ? ', café com ' + esc(who.join(' e ')) : ''}"${!inR ? ' tabindex="-1"' : ''}><b>${d}</b>${sub ? `<i>${sub}</i>` : ''}</button>`;
+    }
+    html += '</div>'; cur = new Date(y, m+1, 1, 12);
+  }
+  $('#agCal').innerHTML = html;
+  $('#agBl').innerHTML = AG.bloqueios.length
+    ? AG.bloqueios.map(d => { const x = pd(d); return `<button data-date="${d}" aria-label="Remover bloqueio de ${d}">${WD[x.getDay()]}, ${x.getDate()} ${MO[x.getMonth()]} ✕</button>`; }).join('')
+    : `<p class="hint" style="margin:0">Nenhuma data bloqueada.</p>`;
+}
+async function agSave(){
+  const b = $('#agSave'); b.disabled = true;
+  try{
+    const r = await api('config', { config: clone(AG) });
+    if (!r || !r.ok) return toast((r && r.error) || 'Não consegui salvar.');
+    CFG = r.config; AG = clone(CFG); AGDIRTY = false; renderAgenda(); toast('Agenda salva ✦');
+  }catch(e){ toast(e.message || 'Não consegui salvar.'); }
+  finally{ b.disabled = false; }
 }
 
 /* convite com nome */

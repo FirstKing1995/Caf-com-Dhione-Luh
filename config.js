@@ -10,7 +10,10 @@ window.CAFE = {
 
   HOSTS: 'Dhione & Luh',
   LOCAL: 'Rua Coronel José Marinho - 149 (Casa com flores brancas na frente)',                                  // endereço que vai na agenda (opcional)
-  HORAS: ['17:00', '17:15', '17:30', '17:45'],
+  // Agenda padrão. Quem manda de verdade é a aba "Agenda" da sala de vocês (admin.html);
+  // estes valores só valem se o servidor não responder.
+  DIAS: [1, 2, 3, 4, 5, 6],                    // 0=dom … 6=sáb → segunda a sábado
+  HORAS: ['17:00', '17:15', '17:30', '17:45', '18:00', '18:15', '18:30'],
   DIAS_A_FRENTE: 35,
 
   // Músicas (tocam em loop até o fim do convite). Suba os arquivos na pasta "musicas" do GitHub
