@@ -67,6 +67,16 @@ dt{color:var(--gold);white-space:nowrap}
 dd{color:var(--bone)}
 .quote{margin-top:10px;padding:10px 12px;border-left:2px solid var(--gold);font-family:var(--fell);font-style:italic;font-size:1.05rem;background:#F1E6CF08;border-radius:0 10px 10px 0}
 .act{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.v>div{min-width:0}
+.tag,dd,.sum,.quote{overflow-wrap:anywhere}
+.tag.warn{background:#E8602C26;border-color:#E8602C99;color:#FFD9C7}
+.pts{margin-top:6px;font-family:var(--fell);font-size:.98rem;color:var(--gold2)}
+.who{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{display:inline-flex;align-items:center;flex-wrap:wrap;gap:2px;font-family:var(--fell);font-size:.92rem;padding:6px 12px;border-radius:999px;border:1px solid #D4AF6A55;color:var(--gold2);min-height:36px;max-width:100%;text-align:left}
+.chip .fx{margin-left:4px}
+.chip.on{background:var(--gold);color:var(--ink);border-color:var(--gold2)}
+.chip:disabled{opacity:.5;cursor:default;font-style:italic;color:#F1E6CFaa}
+.ppl{margin-top:4px;font-size:.9rem;color:#F1E6CFcc}
 .empty{text-align:center;padding:40px 10px;font-family:var(--fell);font-style:italic;color:#F1E6CFaa;font-size:1.1rem}
 
 /* convidados */
@@ -152,8 +162,17 @@ async function api(action, payload = {}){
 function mock(action, b){
   const db = JSON.parse(localStorage.getItem('cafe_mock') || '{"g":[],"v":[]}');
   if (action === 'admin'){
-    const visitas = db.v.map(v => { const g = db.g.find(g => g.id === v.convidadoId) || {}; return { ...v, fluxo: v.fluxo || g.fluxo, leitura: Array.isArray(g.leitura) ? g.leitura : [] }; });
-    const convidados = db.g.map(g => ({ id:g.id, nome:g.nome, email:g.email, telefone:g.telefone, fluxo:g.fluxo, criadoEm:g.criadoEm, atualizadoEm:g.atualizadoEm, leitura: Array.isArray(g.leitura) ? g.leitura : [] }));
+    const arr = x => Array.isArray(x) ? x : [];
+    const visitas = db.v.map(v => {
+      const g = db.g.find(g => g.id === v.convidadoId) || {}, gp = g.par || {};
+      const parNome = v.parNome || '';
+      return { ...v, fluxo: v.fluxo || g.fluxo, leitura: arr(g.leitura),
+        parNome, parFluxo: v.parFluxo || (parNome ? gp.fluxo || '' : ''),
+        parLeitura: arr(v.parLeitura).length ? v.parLeitura : (parNome ? arr(gp.leitura) : []),
+        pontos: v.pontos ?? '', titulo: v.titulo || '' };
+    });
+    const convidados = db.g.map(g => ({ id:g.id, nome:g.nome, email:g.email, telefone:g.telefone, fluxo:g.fluxo, criadoEm:g.criadoEm, atualizadoEm:g.atualizadoEm, leitura: arr(g.leitura),
+      parNome: (g.par && g.par.nome) || '', parFluxo: (g.par && g.par.fluxo) || '', parLeitura: arr(g.par && g.par.leitura) }));
     return Promise.resolve({ ok:true, visitas, convidados });
   }
   if (action === 'status'){
@@ -211,26 +230,48 @@ const L = (o, k) => { const x = (o.leitura || []).find(x => x.k === k); return x
 const isSpicy = f => f && !/mono|não dizer/i.test(f);
 const fx = f => f ? `<span class="fx ${isSpicy(f) ? '' : 'mono'}">${isSpicy(f) ? '🔥 ' : ''}${esc(f)}</span>` : '';
 
+const RESTR_NONE = /^\s*(nenhum[ao]?|nada|não|nao|—|-)\s*\.?\s*$/i;
+const SEL = {};   // visita.id -> 'g' | 'p' (qual olhar está aberto)
+const first = n => String(n || '').trim().split(/\s+/)[0] || '';
+
+function tagsFor(o){
+  const r = L(o,'restricoes');
+  return [
+    r && !RESTR_NONE.test(r) && { t: `⚠ ${r}`, warn: true },
+    L(o,'bebida') && { t: `☕ ${L(o,'bebida')}` },
+    L(o,'comida') && { t: `🍽 ${L(o,'comida')}` },
+    L(o,'pimenta') && { t: `🌶️ ${L(o,'pimenta').split(' ')[0]}` },
+    L(o,'olhar') && { t: `☽ ${L(o,'olhar')}` },
+    L(o,'situacao') && { t: `∞ ${L(o,'situacao')}` },
+    L(o,'erva') && { t: `❦ ${L(o,'erva')}` }
+  ].filter(Boolean).map(x => `<span class="tag${x.warn ? ' warn' : ''}">${esc(x.t)}</span>`).join('');
+}
+
 function visitCard(v){
-  const d = pd(v.data), first = String(v.nome).split(' ')[0];
-  const tags = [
-    L(v,'bebida') && `☕ ${L(v,'bebida')}`,
-    L(v,'comida') && `🍽 ${L(v,'comida')}`,
-    L(v,'pimenta') && `🌶️ ${L(v,'pimenta').split(' ')[0]}`,
-    L(v,'olhar') && `☽ ${L(v,'olhar')}`,
-    L(v,'situacao') && `∞ ${L(v,'situacao')}`,
-    L(v,'erva') && `❦ ${L(v,'erva')}`
-  ].filter(Boolean).map(t => `<span class="tag">${esc(t)}</span>`).join('');
-  const wa = `https://wa.me/${tel(v)}?text=${encodeURIComponent(`Oi ${first}! Aqui é Dhione e Luh. Tudo certo pro nosso café ${WD[d.getDay()]}, ${d.getDate()}/${d.getMonth()+1}, às ${v.hora}? ☕`)}`;
+  const d = pd(v.data), fn = first(v.nome);
+  const hasPar = !!v.parNome, parOk = hasPar && Array.isArray(v.parLeitura) && v.parLeitura.length > 0;
+  const sel = hasPar && SEL[v.id] === 'p' && parOk ? 'p' : 'g';
+  const cur = sel === 'p' ? { leitura: v.parLeitura } : v;
+  const wa = `https://wa.me/${tel(v)}?text=${encodeURIComponent(`Oi ${fn}! Aqui é Dhione e Luh. Tudo certo pro nosso café ${WD[d.getDay()]}, ${d.getDate()}/${d.getMonth()+1}, às ${v.hora}? ☕`)}`;
   const status = v.status || 'marcado';
-  return `<article class="v ${status}">
+  const pts = (v.pontos !== undefined && v.pontos !== null && String(v.pontos) !== '') || v.titulo
+    ? `<p class="pts">🏆 ${[String(v.pontos ?? '') !== '' ? `${esc(v.pontos)} pts` : '', v.titulo ? esc(v.titulo) : ''].filter(Boolean).join(' · ')}</p>` : '';
+  const chips = hasPar ? `<div class="who">
+        <button class="chip ${sel === 'g' ? 'on' : ''}" aria-pressed="${sel === 'g'}" onclick="pick('${v.id}','g')">Olhar de ${esc(fn)}${fx(v.fluxo)}</button>
+        ${parOk
+          ? `<button class="chip ${sel === 'p' ? 'on' : ''}" aria-pressed="${sel === 'p'}" onclick="pick('${v.id}','p')">Olhar de ${esc(first(v.parNome))}${fx(v.parFluxo)}</button>`
+          : `<button class="chip" disabled>${esc(first(v.parNome))} não respondeu</button>`}
+      </div>` : '';
+  return `<article class="v ${status}" data-id="${esc(v.id)}">
     <div class="v-date"><span>${WD[d.getDay()]}</span><b>${d.getDate()}</b><span>${MO[d.getMonth()]}</span><em>${esc(v.hora)}</em></div>
     <div>
-      <h3>${esc(v.nome)}<span class="badge ${status}">${status}</span>${fx(v.fluxo)}</h3>
+      <h3>${esc(v.nome)}${hasPar ? ` &amp; ${esc(v.parNome)}` : ''}<span class="badge ${status}">${status}</span>${hasPar ? '' : fx(v.fluxo)}</h3>
       <p class="sum">${esc(v.companhia || 'Vem só')}. ${v.oferenda && v.oferenda !== 'Nada' ? `Traz: ${esc(v.oferenda)}.` : 'Não vai trazer nada.'}</p>
-      <div class="tags">${tags}</div>
+      ${pts}
+      ${chips}
+      <div class="tags">${tagsFor(cur)}</div>
       ${v.recado ? `<p class="quote">“${esc(v.recado)}”</p>` : ''}
-      <details><summary>Leitura completa</summary>${leituraDL(v)}
+      <details><summary>Leitura completa</summary>${leituraDL(cur)}
         <dl><dt>Dado</dt><dd>${esc(v.dado)} · ${esc(v.bencao)}</dd><dt>Contato</dt><dd>${esc(v.email)} · ${esc(v.telefone)}</dd><dt>Marcado em</dt><dd>${esc(v.criadoEm)}</dd></dl>
       </details>
       <div class="act">
@@ -241,6 +282,15 @@ function visitCard(v){
     </div>
   </article>`;
 }
+function pick(id, who){
+  SEL[id] = who;
+  const v = DATA.visitas.find(x => x.id === id), el = document.querySelector(`article.v[data-id="${CSS.escape(id)}"]`);
+  if (!v || !el) return render();
+  const open = el.querySelector('details')?.open;
+  const t = document.createElement('template'); t.innerHTML = visitCard(v).trim();
+  const n = t.content.firstElementChild; if (open) n.querySelector('details').open = true;
+  el.replaceWith(n);
+}
 function leituraDL(o){
   const rows = o.leitura || [];
   if (!rows.length) return `<p class="lede" style="margin-top:8px">Sem respostas guardadas.</p>`;
@@ -248,8 +298,14 @@ function leituraDL(o){
 }
 function guestCard(g){
   const n = DATA.visitas.filter(v => v.convidadoId === g.id && v.status !== 'cancelada').length;
-  return `<article class="g"><h3>${esc(g.nome)}${fx(g.fluxo)}</h3><p>${esc(g.email)} · ${esc(g.telefone)} · ${n} café${n === 1 ? '' : 's'}</p>
-    <details><summary>Leitura</summary>${leituraDL(g)}</details></article>`;
+  const hasPar = !!g.parNome, parOk = Array.isArray(g.parLeitura) && g.parLeitura.length > 0;
+  return `<article class="g"><h3>${esc(g.nome)}${fx(g.fluxo)}</h3>
+    ${hasPar ? `<p class="ppl">com ${esc(g.parNome)}${fx(g.parFluxo)}</p>` : ''}
+    <p>${esc(g.email)} · ${esc(g.telefone)} · ${n} café${n === 1 ? '' : 's'}</p>
+    <details><summary>Leitura${hasPar ? 's' : ''}</summary>
+      ${hasPar ? `<p class="ppl" style="margin-top:10px"><b>${esc(first(g.nome))}</b></p>` : ''}${leituraDL(g)}
+      ${hasPar ? `<p class="ppl" style="margin-top:12px"><b>${esc(first(g.parNome))}</b></p>${parOk ? leituraDL({ leitura: g.parLeitura }) : `<p class="lede" style="margin-top:8px">Sem respostas guardadas.</p>`}` : ''}
+    </details></article>`;
 }
 async function setStatus(id, status){
   const msg = { cancelada:'Cancelar este café? O dia volta a ficar livre.', confirmado:null, marcado:null }[status];

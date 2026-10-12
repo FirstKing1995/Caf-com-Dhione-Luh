@@ -11,7 +11,14 @@ window.CAFE = {
   HOSTS: 'Dhione & Luh',
   LOCAL: 'Rua Coronel José Marinho - 149 (Casa com flores brancas na frente)',                                  // endereço que vai na agenda (opcional)
   HORAS: ['17:00', '17:15', '17:30', '17:45'],
-  DIAS_A_FRENTE: 35
+  DIAS_A_FRENTE: 35,
+
+  // Músicas (tocam em loop até o fim do convite). Suba os arquivos na pasta "musicas" do GitHub
+  // com EXATAMENTE estes nomes. Se o arquivo não existir, toca uma trilha sintetizada de reserva.
+  MUSICA: {
+    mono:  'musicas/arco-iris-na-areia.mp3',   // "Arco-Íris na Areia" → fluxo monogâmico
+    spicy: 'musicas/mucica-naomono.mp3'        // "MUCICA-NAOMONO"     → não-mono / liberal / curioso
+  }
 };
 
 /* Comunicação com o Apps Script: GET simples (mais compatível com navegadores de
