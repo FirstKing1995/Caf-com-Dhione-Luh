@@ -41,12 +41,36 @@
   let stored = { par: null }, found = false, parMode = 'none', musicOn = false;
   const vis = { companhia: { par: false, parNome: '', criancas: 0, idades: '', outro: false, outroNome: '' } };
   let flow = 'mono';
+  /* agenda: vem do servidor (aba Agenda da sala); config.js é só reserva */
+  let agenda = { dias: C.DIAS || [1, 2, 3, 4, 5, 6], horas: C.HORAS, bloqueios: [], diasAFrente: C.DIAS_A_FRENTE || 35, umPorDia: true };
+  let bookedFull = [];
+  const DSHORT = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+  function applySlots(r) {
+    bookedFull = (r && r.booked) || [];
+    if (r && r.config && Array.isArray(r.config.horas) && r.config.horas.length) agenda = { ...agenda, ...r.config };
+    if (vis.data && !dayOk(vis.data)) { vis.data = null; vis.hora = null; }
+    if (vis.hora && !horaOk(vis.data, vis.hora)) vis.hora = null;
+  }
+  const takenHoras = d => bookedFull.filter(b => b.data === d).map(b => b.hora);
+  function horaOk(d, h) { return agenda.horas.includes(h) && !(d && !agenda.umPorDia && takenHoras(d).includes(h)); }
+  function dayOk(d) {
+    const dt = pd(d), first = new Date(); first.setHours(12, 0, 0, 0); first.setDate(first.getDate() + 1);
+    const end = new Date(first); end.setDate(end.getDate() + agenda.diasAFrente);
+    if (dt < first || dt > end || !agenda.dias.includes(dt.getDay()) || agenda.bloqueios.includes(d)) return false;
+    return agenda.umPorDia ? !takenHoras(d).length : agenda.horas.some(h => !takenHoras(d).includes(h));
+  }
+  function diasTxt() {
+    const ds = agenda.dias.slice().sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7));
+    const seq = ds.map(d => (d + 6) % 7), cont = seq.every((v, i) => !i || v === seq[i - 1] + 1);
+    return cont && ds.length > 2 ? `De ${DSHORT[ds[0]]} a ${DSHORT[ds[ds.length - 1]]}` : ds.map(d => DSHORT[d]).join(', ');
+  }
+  const addMin = (h, m) => { const [a, b] = h.split(':').map(Number), t = a * 60 + b + m; return `${String(Math.floor(t / 60) % 24).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`; };
   const S = () => flow === 'spicy';
   const tx = v => K.tx(v, S());
   const flowOf = p => (K.FLUXOS[p.ans.fluxoTipo] || K.FLUXOS.nd).flow;
   const fluxoK = p => (K.FLUXOS[p.ans.fluxoTipo] || K.FLUXOS.nd).k;
   /* no fim, o tom é o do mais conservador: só fica quente se todo mundo que respondeu for do fluxo quente */
-  const visitFlow = () => flowOf(P.guest) === 'spicy' && (parMode === 'none' || flowOf(P.par) === 'spicy') ? 'spicy' : 'mono';
+  const visitFlow = () => flowOf(P.guest) === 'spicy' && (['none', 'skip', 'copy'].includes(parMode) || flowOf(P.par) === 'spicy') ? 'spicy' : 'mono';
   const names = () => parMode !== 'none' ? `${first(P.guest.nome)} & ${first(P.par.nome)}` : first(P.guest.nome);
 
   function setFlow(f, fx = false) {
@@ -107,6 +131,11 @@
 
   /* ---------------- API (Apps Script ou demonstração) ---------------- */
   async function api(action, payload = {}) { return C.API_URL ? window.cafeApi(action, payload) : mock(action, payload); }
+  function mockCfg(db) {
+    const c = { dias: [1, 2, 3, 4, 5, 6], horaIni: '17:00', horaFim: '18:30', intervalo: 15, bloqueios: [], diasAFrente: 35, umPorDia: true, ...(db.config || {}) };
+    const hs = []; for (let t = c.horaIni; t <= c.horaFim; t = addMin(t, c.intervalo)) { hs.push(t); if (hs.length > 60) break; }
+    return { ...c, horas: hs };
+  }
   function mock(action, b) {
     const db = store.get('cafe_mock') || { g: [], v: [] };
     const hoje = ymd(new Date()); let out;
@@ -117,16 +146,17 @@
       else { const p = db.v.filter(v => v.convidadoId === g.id && v.data >= hoje && v.status !== 'cancelada').sort((a, c) => (a.data + a.hora).localeCompare(c.data + c.hora))[0];
         out = { ok: true, found: true, guest: { nome: g.nome, email: g.email, telefone: g.telefone }, perfil: g.perfil, par: g.par && g.par.perfil ? { nome: g.par.nome, fluxo: g.par.fluxo, perfil: g.par.perfil } : null, proxima: p ? { data: p.data, hora: p.hora } : null }; }
     } else if (action === 'slots') {
-      out = { ok: true, booked: db.v.filter(v => v.status !== 'cancelada' && v.data >= hoje).map(v => ({ data: v.data, hora: v.hora })) };
+      out = { ok: true, booked: db.v.filter(v => v.status !== 'cancelada' && v.data >= hoje).map(v => ({ data: v.data, hora: v.hora })), config: mockCfg(db) };
     } else if (action === 'save') {
       if (db.v.some(v => v.id === b.visita.id)) return Promise.resolve({ ok: true });
-      if (db.v.some(v => v.data === b.visita.data && v.status !== 'cancelada')) return Promise.resolve({ ok: false, error: 'Esse dia acabou de ser ocupado. Escolha outro.' });
+      const cfg = mockCfg(db);
+      if (db.v.some(v => v.data === b.visita.data && v.status !== 'cancelada' && (cfg.umPorDia || v.hora === b.visita.hora))) return Promise.resolve({ ok: false, error: cfg.umPorDia ? 'Esse dia acabou de ser ocupado. Escolha outro.' : 'Esse horário acabou de ser ocupado. Escolha outro.' });
       const e = normEmail(b.guest.email), t = normTel(b.guest.telefone), agora = new Date().toISOString().slice(0, 16).replace('T', ' ');
       let g = db.g.find(x => x.email === e);
       if (!g) { g = { id: uid(), criadoEm: agora, email: e, telefone: t }; db.g.push(g); }
       g.nome = b.guest.nome; g.atualizadoEm = agora;
       if (b.perfil) { g.perfil = b.perfil; g.leitura = b.leitura; g.fluxo = b.fluxo; }
-      if (b.par) g.par = { nome: b.par.nome, fluxo: b.par.fluxo, perfil: b.par.perfil, leitura: b.par.leitura };
+      if (b.par && b.par.perfil && b.par.modo !== 'pulou') g.par = { nome: b.par.nome, fluxo: b.par.fluxo, perfil: b.par.perfil, leitura: b.par.leitura };
       const par = b.par || (b.parKeep ? g.par : null);
       db.v.push({ criadoEm: agora, status: 'marcado', convidadoId: g.id, nome: g.nome, email: e, telefone: t, fluxo: g.fluxo, ...b.visita,
         parFluxo: par ? par.fluxo : '', parLeitura: par ? par.leitura : [] });
@@ -290,6 +320,7 @@
     $('#pTel').value = fmtTel(P.par.telefone || ''); $('#pEmail').value = P.par.email || '';
     const canKeep = stored.par && stored.par.perfil && stored.par.perfil.fluxoTipo && sameName(stored.par.nome, c.parNome);
     $('#p2Keep').hidden = !canKeep;
+    $('#p2Copy').textContent = `Usar as mesmas respostas de ${first(P.guest.nome)}`;
     if (canKeep) $('#p2Keep').textContent = `Usar as respostas de ${first(stored.par.nome)} da última vez`;
     show('s-p2');
     setTimeout(() => { E.banner('PLAYER 2', `${nm} entrou no jogo`, { cls: 'p2' }); E.sfx('power'); }, 350);
@@ -309,6 +340,24 @@
   $('#p2Keep').onclick = () => {
     parMode = 'keep'; P.par.nome = stored.par.nome; P.par.ans = stored.par.perfil; P.par.adult = true;
     vis.companhia.parNome = stored.par.nome; E.sfx('select');
+    visitPhase(() => partnerPhase(p2Back));
+  };
+  function parBasics() {
+    const nome = $('#pNome').value.trim() || vis.companhia.parNome.trim(), tel = normTel($('#pTel').value), email = normEmail($('#pEmail').value);
+    if (nome.length < 2) { fail('Qual o nome do seu par?'); return false; }
+    Object.assign(P.par, { nome, telefone: tel.length >= 10 ? tel : '', email: okEmail(email) && email !== P.guest.email ? email : '' });
+    vis.companhia.parNome = nome; return true;
+  }
+  $('#p2Copy').onclick = () => {
+    if (!parBasics()) return;
+    parMode = 'copy'; P.par.ans = JSON.parse(JSON.stringify(P.guest.ans)); P.par.scores = {};
+    E.sfx('select'); Mascot.say(`Copiou da ${first(P.guest.nome)}? Casal que combina em tudo 😄`);
+    visitPhase(() => partnerPhase(p2Back));
+  };
+  $('#p2Skip').onclick = () => {
+    if (!parBasics()) return;
+    parMode = 'skip'; P.par.ans = {}; E.sfx('boing');
+    toast(`Tudo bem, ${first(P.par.nome)}! O convite continua de pé pra você 💛`);
     visitPhase(() => partnerPhase(p2Back));
   };
   $('#p2Back').onclick = () => { E.sfx('flip'); p2Back && p2Back(); };
@@ -335,7 +384,7 @@
     deck = steps; deckWho = who; idx = at; deckDone = onDone; deckBack = onBack; deckOpts = opts;
     if (who !== 'visit') setFlow(flowOf(P[who]));
     setWho(who);
-    if (steps.some(s => s.type === 'date')) api('slots').then(r => { booked = (r.booked || []).map(b => b.data); if (deck[idx] && deck[idx].type === 'date') refresh(); }).catch(() => {});
+    if (steps.some(s => s.type === 'date')) api('slots').then(r => { applySlots(r); if (deck[idx] && ['date', 'hora'].includes(deck[idx].type)) { $('#card .sub') && deck[idx].type === 'date' && ($('#card .sub').textContent = dateSub()); refresh(); } }).catch(() => {});
     $('#card').className = 'card'; show('s-deck'); paint(); E.sfx('flip');
   }
   function paint() {
@@ -357,7 +406,8 @@
   }
   function frame(s, i) {
     let sub = tx(s.sub);
-    if (s.type === 'hora' && vis.data) sub = `Dia escolhido: ${fmtLong(vis.data)}. O café acontece entre 17h e 18h.`;
+    if (s.type === 'hora') sub = `${vis.data ? `Dia escolhido: ${fmtLong(vis.data)}. ` : ''}Chegada entre ${agenda.horas[0]} e ${agenda.horas[agenda.horas.length - 1]}.`;
+    if (s.type === 'date') sub = dateSub();
     const game = s.type === 'game';
     return `${corners}<header class="c-head"><span class="c-num">${roman(i + 1)}</span><span class="c-g" aria-hidden="true">${s.g}</span></header>
       <h2 class="q">${tx(s.q)}</h2>${sub ? `<p class="sub">${sub}</p>` : ''}
@@ -394,20 +444,27 @@
         ${c.outro ? `<input class="xin" data-cx="outroNome" placeholder="Quem vem com você?" value="${esc(c.outroNome)}">` : ''}
       </div><p class="note" style="text-align:center;margin-top:14px">${none ? 'Vindo só também é um ótimo café.' : c.par ? 'Seu par responde depois de você. Sem colar!' : 'Quanto mais gente, mais tapioca.'}</p>`; }
     if (s.type === 'date') return dateBody();
-    if (s.type === 'hora') return `<div class="horas">${C.HORAS.map(h => `<button class="hora ${vis.hora === h ? 'sel' : ''}" data-hora="${h}">${h}</button>`).join('')}</div>`;
+    if (s.type === 'hora') return `<div class="horas">${agenda.horas.map(h => { const ok = horaOk(vis.data, h); return `<button class="hora ${vis.hora === h ? 'sel' : ''}" data-hora="${h}" ${ok ? '' : 'disabled aria-label="' + h + ', ocupado"'}>${h}</button>`; }).join('')}</div>`;
     return '';
   }
+  function dateSub() { return `${diasTxt()}. Dias com selo já estão ocupados.`; }
   function dateBody() {
     const firstD = new Date(); firstD.setHours(12, 0, 0, 0); firstD.setDate(firstD.getDate() + 1);
-    const end = new Date(firstD); end.setDate(end.getDate() + C.DIAS_A_FRENTE);
-    const mon = new Date(firstD), dow = mon.getDay(); mon.setDate(mon.getDate() - (dow === 0 ? 6 : dow - 1)); if (dow === 6 || dow === 0) mon.setDate(mon.getDate() + 7);
-    let html = `<div class="cal-h">${['seg', 'ter', 'qua', 'qui', 'sex'].map(d => `<span>${d}</span>`).join('')}</div>`, lastM = -1;
+    const end = new Date(firstD); end.setDate(end.getDate() + agenda.diasAFrente);
+    const cols = agenda.dias.slice().sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7));
+    let html = `<div class="cal-h" style="--cols:${cols.length}">${cols.map(d => `<span>${DSHORT[d]}</span>`).join('')}</div>`, lastM = -1;
+    const mon = new Date(firstD); mon.setDate(mon.getDate() - ((mon.getDay() + 6) % 7));
     for (const w = new Date(mon); w <= end; w.setDate(w.getDate() + 7)) {
-      const ref = w < firstD ? firstD : w;
+      const days = cols.map(dw => { const d = new Date(w); d.setDate(w.getDate() + ((dw + 6) % 7)); return d; });
+      if (days.every(d => d < firstD || d > end)) continue;
+      const ref = days.find(d => d >= firstD) || days[0];
       if (ref.getMonth() !== lastM) { lastM = ref.getMonth(); html += `<p class="cal-m">${MO[lastM]} de ${ref.getFullYear()}</p>`; }
-      html += `<div class="cal-w">`;
-      for (let k = 0; k < 5; k++) { const d = new Date(w); d.setDate(w.getDate() + k); const id = ymd(d), out = d < firstD || d > end, taken = booked.includes(id);
-        html += `<button class="day ${out ? 'past' : ''} ${taken ? 'taken' : ''} ${vis.data === id ? 'sel' : ''}" data-day="${id}" ${out || taken ? 'disabled' : ''} aria-label="${fmtLong(id)}${taken ? ', ocupado' : ''}"><b>${d.getDate()}</b>${taken && !out ? '<i>selado</i>' : ''}</button>`; }
+      html += `<div class="cal-w" style="--cols:${cols.length}">`;
+      for (const d of days) {
+        const id = ymd(d), out = d < firstD || d > end, blk = !out && agenda.bloqueios.includes(id), ok = !out && dayOk(id);
+        const taken = !out && !blk && !ok;
+        html += `<button class="day ${out || blk ? 'past' : ''} ${taken ? 'taken' : ''} ${vis.data === id ? 'sel' : ''}" data-day="${id}" ${ok ? '' : 'disabled'} aria-label="${fmtLong(id)}${taken ? ', ocupado' : ''}"><b>${d.getDate()}</b>${taken ? '<i>selado</i>' : ''}</button>`;
+      }
       html += `</div>`;
     }
     return html;
@@ -440,7 +497,7 @@
     else if (b.dataset.comp) { const k = b.dataset.comp; if (k === 'criancas') c.criancas = c.criancas ? 0 : 1; else c[k] = !c[k]; E.sfx('select'); E.vibe(6); refresh();
       if (k === 'par' && c.par) { Mascot.say('Ah, vai ter Player 2! Seu par joga depois de você 😈'); const x = $('#cbody [data-cx="parNome"]'); if (x) setTimeout(() => x.focus({ preventScroll: true }), 60); } }
     else if (b.dataset.kid) { c.criancas = E.clamp(c.criancas + (+b.dataset.kid), 0, 8); E.sfx('tick', +b.dataset.kid > 0); refresh(); }
-    else if (b.dataset.day) { vis.data = b.dataset.day; E.sfx('select'); E.vibe(8); refresh(); E.fx.at($(`#cbody [data-day="${vis.data}"]`), { n: 18 }); }
+    else if (b.dataset.day) { vis.data = b.dataset.day; if (vis.hora && !horaOk(vis.data, vis.hora)) vis.hora = null; E.sfx('select'); E.vibe(8); refresh(); E.fx.at($(`#cbody [data-day="${vis.data}"]`), { n: 18 }); }
     else if (b.dataset.hora) { vis.hora = b.dataset.hora; E.sfx('select'); E.vibe(8); refresh(); E.pop($(`#cbody [data-hora="${vis.hora}"]`)); }
   });
   $('#card').addEventListener('input', e => {
@@ -579,6 +636,7 @@
     if (s.type === 'companhia' && vis.companhia.par && vis.companhia.parNome.trim().length < 2) return 'Qual o nome do seu par?';
     if (s.type === 'date' && !vis.data) return 'Escolha um dia no calendário.';
     if (s.type === 'hora' && !vis.hora) return 'Escolha o horário de chegada.';
+    if (s.type === 'hora' && !horaOk(vis.data, vis.hora)) return 'Esse horário não está mais livre. Escolha outro.';
     return '';
   }
   function turn(dir) {
@@ -660,7 +718,10 @@
       perfil: g.mode === 'full' ? g.ans : null,
       leitura: g.mode === 'full' ? leituraOf(g) : null,
       fluxo: fluxoK(g),
-      par: parMode === 'full' ? { nome: pp.nome, email: pp.email, telefone: pp.telefone, perfil: pp.ans, leitura: leituraOf(pp), fluxo: fluxoK(pp) } : null,
+      par: parMode === 'full' ? { nome: pp.nome, email: pp.email, telefone: pp.telefone, modo: 'respondeu', perfil: pp.ans, leitura: leituraOf(pp), fluxo: fluxoK(pp) }
+        : parMode === 'copy' ? { nome: pp.nome, email: pp.email, telefone: pp.telefone, modo: 'copiou', perfil: pp.ans, leitura: [{ k: 'modo', l: 'Respostas', v: `Usou as respostas de ${first(g.nome)}` }, ...leituraOf(pp)], fluxo: fluxoK(pp) }
+        : parMode === 'skip' ? { nome: pp.nome, email: pp.email, telefone: pp.telefone, modo: 'pulou', perfil: null, leitura: [{ k: 'modo', l: 'Respostas', v: 'Preferiu não responder' }], fluxo: '' }
+        : null,
       parKeep: parMode === 'keep',
       visita: { id: visitId, data: vis.data, hora: vis.hora, companhia: compTxt(), oferenda: ofTxt(), recado: String(vis.recado || '').trim(), dado: String(dado), bencao,
         pontos: String(E.score.total), titulo, parNome: parMode !== 'none' ? pp.nome : '' }
@@ -671,8 +732,8 @@
       done();
     } catch (err) {
       loader(false); fail(err.message);
-      if (/ocupad/i.test(err.message)) {
-        const res = await api('slots').catch(() => ({})); booked = (res.booked || []).map(b => b.data);
+      if (/ocupad|dispon|inválid/i.test(err.message)) {
+        const res = await api('slots').catch(() => ({})); applySlots(res);
         vis.data = null; vis.hora = null;
         openDeck(K.VISIT, 'visit', goRoll, K.VISIT.findIndex(s => s.type === 'date'), () => {}, { last: 'Rolar o destino 🎲', lastSkip: 'Pular e rolar o dado 🎲' });
       }
@@ -778,7 +839,7 @@
     E.tween({ v: 0 }, { v: E.score.total }, { dur: 1400, onUpdate: o => $('#endPts').textContent = Math.round(o.v) });
     $('#endAch').innerHTML = E.achievements.map(a => `<span>${a.emoji} ${esc(a.title)}${a.who ? ` · ${esc(first(a.who))}` : ''}</span>`).join('');
     const [y, m, dd] = vis.data.split('-'), [h, mi] = vis.hora.split(':');
-    const q = new URLSearchParams({ action: 'TEMPLATE', text: `Café com ${C.HOSTS} ☕`, dates: `${y}${m}${dd}T${h}${mi}00/${y}${m}${dd}T180000`, ctz: 'America/Fortaleza',
+    const q = new URLSearchParams({ action: 'TEMPLATE', text: `Café com ${C.HOSTS} ☕`, dates: `${y}${m}${dd}T${h}${mi}00/${y}${m}${dd}T${addMin(vis.hora, 60).replace(':', '')}00`, ctz: 'America/Fortaleza',
       details: bencao + (ofTxt() && ofTxt() !== 'Nada' ? `\n\nNão esquece: ${ofTxt()}.` : ''), ...(C.LOCAL ? { location: C.LOCAL } : {}) });
     $('#gcal').href = `https://calendar.google.com/calendar/render?${q}`;
     $('#wa').href = `https://wa.me/${C.WHATS}?text=${encodeURIComponent(waText())}`;
@@ -837,5 +898,5 @@
   $('#closeImg').onclick = () => $('#imgModal').classList.remove('on');
 
   /* ganchos para teste automatizado */
-  window.__cafe = { P, vis, get deck() { return deck; }, get idx() { return idx; }, gdone, ignite, get parMode() { return parMode; } };
+  window.__cafe = { get agenda() { return agenda; }, P, vis, get deck() { return deck; }, get idx() { return idx; }, gdone, ignite, get parMode() { return parMode; } };
 })();
